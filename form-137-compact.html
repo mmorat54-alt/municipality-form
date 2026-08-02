@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ثبت درخواست شهرداری</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    font-family: Tahoma, "Segoe UI", sans-serif;
+    background: #fff;
+    padding: 10px 14px;
+    color: #222;
+  }
+  h2 {
+    font-size: 15px;
+    margin: 0 0 8px;
+    color: #1a3c6e;
+    text-align: center;
+  }
+  .row {
+    display: flex;
+    gap: 8px;
+  }
+  .row > div { flex: 1; min-width: 0; }
+  label {
+    display: block;
+    font-size: 11px;
+    margin: 8px 0 3px;
+    color: #444;
+    font-weight: bold;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fafafa;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #1a6ee6;
+    background: #fff;
+  }
+  textarea { resize: none; height: 42px; }
+  .error { color: #d33; font-size: 10px; margin-top: 2px; display: none; }
+  .consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 10px;
+    color: #666;
+    line-height: 1.4;
+  }
+  .consent input { width: auto; margin-top: 1px; }
+  button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 9px;
+    background: #1a6ee6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button:disabled { background: #9bb8de; cursor: not-allowed; }
+  #status {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 11px;
+    display: none;
+  }
+  #status.ok { color: #1a8a3c; }
+  #status.fail { color: #d33; }
+  .tracking {
+    background: #eef6ee;
+    border: 1px solid #cbe6cb;
+    border-radius: 7px;
+    padding: 6px;
+    margin-top: 6px;
+    font-size: 11px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h2>ثبت درخواست از شهرداری</h2>
+
+<form id="requestForm">
+  <div class="row">
+    <div>
+      <label for="fullname">نام و نام خانوادگی</label>
+      <input type="text" id="fullname" name="fullname" required>
+    </div>
+    <div>
+      <label for="phone">شماره تماس</label>
+      <input type="tel" id="phone" name="phone" inputmode="numeric" placeholder="09xxxxxxxxx" required>
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="nationalCode">کد ملی</label>
+      <input type="text" id="nationalCode" name="nationalCode" inputmode="numeric" maxlength="10" required>
+      <div class="error" id="ncError">کد ملی نامعتبر است.</div>
+    </div>
+    <div>
+      <label for="category">نوع درخواست</label>
+      <select id="category" name="category" required>
+        <option value="">انتخاب کنید...</option>
+        <option value="روشنایی معابر">روشنایی معابر</option>
+        <option value="جمع‌آوری زباله">جمع‌آوری زباله</option>
+        <option value="خرابی آسفالت">خرابی آسفالت</option>
+        <option value="فضای سبز">فضای سبز</option>
+        <option value="سد معبر">سد معبر</option>
+        <option value="سایر">سایر</option>
+      </select>
+    </div>
+  </div>
+
+  <label for="address">آدرس / محل مورد نظر</label>
+  <textarea id="address" name="address" required></textarea>
+
+  <label for="details">توضیحات درخواست</label>
+  <textarea id="details" name="details" placeholder="شرح کامل مشکل..." required></textarea>
+
+  <div class="consent">
+    <input type="checkbox" id="consent" required>
+    <label for="consent" style="margin:0; font-weight:normal;">
+      موافقم اطلاعات فوق برای پیگیری در اختیار شهرداری قرار گیرد.
+    </label>
+  </div>
+
+  <button type="submit" id="submitBtn">ارسال درخواست</button>
+  <div id="status"></div>
+</form>
+
+<script>
+const SUBMIT_ENDPOINT = "https://formspree.io/f/mqerrznb";
+
+const form = document.getElementById("requestForm");
+const status = document.getElementById("status");
+const submitBtn = document.getElementById("submitBtn");
+const ncInput = document.getElementById("nationalCode");
+const ncError = document.getElementById("ncError");
+
+function isValidNationalCode(code) {
+  if (!/^\d{10}$/.test(code)) return false;
+  const check = +code[9];
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += (+code[i]) * (10 - i);
+  const remainder = sum % 11;
+  return (remainder < 2 && check === remainder) || (remainder >= 2 && check === 11 - remainder);
+}
+
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  status.style.display = "none";
+  ncError.style.display = "none";
+
+  const nc = ncInput.value.trim();
+  if (!isValidNationalCode(nc)) {
+    ncError.style.display = "block";
+    ncInput.focus();
+    return;
+  }
+
+  const trackingId = "REQ-" + Date.now().toString().slice(-8);
+
+  const data = {
+    "شماره پیگیری": trackingId,
+    "نام": document.getElementById("fullname").value,
+    "کد ملی": nc,
+    "شماره تماس": document.getElementById("phone").value,
+    "آدرس": document.getElementById("address").value,
+    "نوع درخواست": document.getElementById("category").value,
+    "توضیحات": document.getElementById("details").value,
+    "_subject": "درخواست جدید شهرداری - " + trackingId
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "در حال ارسال...";
+
+  try {
+    const res = await fetch(SUBMIT_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      status.className = "ok";
+      status.innerHTML = "درخواست با موفقیت ثبت شد." +
+        "<div class='tracking'>کد پیگیری: <b>" + trackingId + "</b></div>";
+      status.style.display = "block";
+      form.reset();
+    } else {
+      throw new Error("submit failed");
+    }
+  } catch (err) {
+    status.className = "fail";
+    status.textContent = "خطا در ارسال. دوباره تلاش کنید یا با ۱۳۷ تماس بگیرید.";
+    status.style.display = "block";
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "ارسال درخواست";
+  }
+});
+</script>
+
+</body>
+</html>
