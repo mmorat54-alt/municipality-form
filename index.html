@@ -146,8 +146,7 @@
 </form>
 
 <script>
-// آدرس اسکریپت گوگل شیت خودتان را اینجا جایگزین کنید
-const SUBMIT_ENDPOINT = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+const SUBMIT_ENDPOINT = "https://formspree.io/f/mqerrznb";
 
 const form = document.getElementById("requestForm");
 const status = document.getElementById("status");
@@ -185,7 +184,8 @@ form.addEventListener("submit", async function (e) {
     "شماره تماس": document.getElementById("phone").value,
     "آدرس": document.getElementById("address").value,
     "نوع درخواست": document.getElementById("category").value,
-    "توضیحات": document.getElementById("details").value
+    "توضیحات": document.getElementById("details").value,
+    "_subject": "درخواست جدید شهرداری - " + trackingId
   };
 
   submitBtn.disabled = true;
@@ -194,13 +194,11 @@ form.addEventListener("submit", async function (e) {
   try {
     const res = await fetch(SUBMIT_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify(data)
     });
 
-    const result = await res.json();
-
-    if (result.result === "success") {
+    if (res.ok) {
       status.className = "ok";
       status.innerHTML = "درخواست با موفقیت ثبت شد." +
         "<div class='tracking'>کد پیگیری: <b>" + trackingId + "</b></div>";
