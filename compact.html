@@ -179,13 +179,13 @@ form.addEventListener("submit", async function (e) {
   const trackingId = "REQ-" + Date.now().toString().slice(-8);
 
   const data = {
-    trackingId: trackingId,
-    fullname: document.getElementById("fullname").value,
-    nationalCode: nc,
-    phone: document.getElementById("phone").value,
-    address: document.getElementById("address").value,
-    category: document.getElementById("category").value,
-    details: document.getElementById("details").value
+    "شماره پیگیری": trackingId,
+    "نام": document.getElementById("fullname").value,
+    "کد ملی": nc,
+    "شماره تماس": document.getElementById("phone").value,
+    "آدرس": document.getElementById("address").value,
+    "نوع درخواست": document.getElementById("category").value,
+    "توضیحات": document.getElementById("details").value
   };
 
   submitBtn.disabled = true;
