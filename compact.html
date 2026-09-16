@@ -104,8 +104,7 @@
     </div>
     <div>
       <label for="phone">شماره تماس</label>
-      <input type="tel" id="phone" name="phone" inputmode="numeric" placeholder="09xxxxxxxxx" maxlength="11" required>
-      <div class="error" id="phoneError">شماره تماس نامعتبر است (باید ۱۱ رقم و با ۰۹ شروع شود).</div>
+      <input type="tel" id="phone" name="phone" inputmode="numeric" placeholder="09xxxxxxxxx" required>
     </div>
   </div>
 
@@ -147,24 +146,14 @@
 </form>
 
 <script>
-// آدرس Web App گوگل اسکریپت خودتو اینجا جایگزین کن (مراحل ساختش رو در پاسخ توضیح دادم)
-const SUBMIT_ENDPOINT = "https://script.google.com/macros/s/AKfycbw-QAE9-45aIgZumIzfdX_o518SRvemzJMFaJBGsU4vQPxwJor84fIxWv50abSH93i6Jw/exec";
+// آدرس اسکریپت گوگل شیت خودتان را اینجا جایگزین کنید
+const SUBMIT_ENDPOINT = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
 
 const form = document.getElementById("requestForm");
 const status = document.getElementById("status");
 const submitBtn = document.getElementById("submitBtn");
 const ncInput = document.getElementById("nationalCode");
 const ncError = document.getElementById("ncError");
-const phoneInput = document.getElementById("phone");
-const phoneError = document.getElementById("phoneError");
-
-// فیلتر ورودی حین تایپ: فقط عدد بمونه
-ncInput.addEventListener("input", () => {
-  ncInput.value = ncInput.value.replace(/\D/g, "").slice(0, 10);
-});
-phoneInput.addEventListener("input", () => {
-  phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 11);
-});
 
 function isValidNationalCode(code) {
   if (!/^\d{10}$/.test(code)) return false;
@@ -175,43 +164,28 @@ function isValidNationalCode(code) {
   return (remainder < 2 && check === remainder) || (remainder >= 2 && check === 11 - remainder);
 }
 
-function isValidPhone(phone) {
-  return /^09\d{9}$/.test(phone);
-}
-
 form.addEventListener("submit", async function (e) {
   e.preventDefault();
   status.style.display = "none";
   ncError.style.display = "none";
-  phoneError.style.display = "none";
 
   const nc = ncInput.value.trim();
-  const phone = phoneInput.value.trim();
-
-  let hasError = false;
-  if (!isValidPhone(phone)) {
-    phoneError.style.display = "block";
-    hasError = true;
-  }
   if (!isValidNationalCode(nc)) {
     ncError.style.display = "block";
-    hasError = true;
-  }
-  if (hasError) {
-    (isValidPhone(phone) ? ncInput : phoneInput).focus();
+    ncInput.focus();
     return;
   }
 
   const trackingId = "REQ-" + Date.now().toString().slice(-8);
 
   const data = {
-    "شماره پیگیری": trackingId,
-    "نام": document.getElementById("fullname").value,
-    "کد ملی": nc,
-    "شماره تماس": phone,
-    "آدرس": document.getElementById("address").value,
-    "نوع درخواست": document.getElementById("category").value,
-    "توضیحات": document.getElementById("details").value
+    trackingId: trackingId,
+    fullname: document.getElementById("fullname").value,
+    nationalCode: nc,
+    phone: document.getElementById("phone").value,
+    address: document.getElementById("address").value,
+    category: document.getElementById("category").value,
+    details: document.getElementById("details").value
   };
 
   submitBtn.disabled = true;
